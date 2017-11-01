@@ -12,18 +12,18 @@ class Main {
   static var i64 = Int64.fromFloat(255.);
   
   static public function main():Void {
-    logRemove("HIDE " + str);
-    Debug.logRemove("HIDE " + Std.string(i64));
-    logRemove("HIDE " + str + " " + i64);
-    trace("SHOW " + str + " " + i64);
+    logRemove(str);
+    Debug.logRemove(Std.string(i64));
+    logRemove(str + " " + i64);
+    trace(str + " " + i64);
     work();
   }
   
   @:keep
   static public function work():Void {
     for (i in 0...3) {
-      trace("SHOW " + i);
-      logRemove("HIDE " + Std.string(i));
+      trace(i);
+      logRemove(Std.string(i));
     }
   }
 }

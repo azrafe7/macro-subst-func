@@ -3,6 +3,6 @@
 class Debug {
   
   static public function logRemove(s:String):Void {
-    trace(s);
+    trace("LOGREMOVE: " + s);
   }
 }
