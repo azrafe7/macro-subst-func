@@ -12,12 +12,6 @@ using haxe.macro.Tools;
 class Macros {
   
   #if !macro macro #end
-  static public function remove(functionName:String) {
-    trace(functionName);
-    return macro null;
-  }
-  
-  #if !macro macro #end
   static public function build() {
     
     var fields = Context.getBuildFields();
@@ -25,19 +19,8 @@ class Macros {
     for (field in fields) {
       switch (field.kind) {
         case FFun(func):
-          var name = field.name;
-          trace(name + "()");
-          trace("---" + func.expr.toString());
-          
-          func.expr = dbg(func.expr);
-          //return macro $v{Macros.noOp};
-          
-          //func.expr = makeNoOp(func.expr);
-          
-          
-          
+          func.expr = makeNoOp(func.expr);
         default:
-          
       }
     }
     
@@ -45,7 +28,7 @@ class Macros {
   }
   
   #if !macro macro #end
-  static function dbg(e:Expr):Expr {
+  static function makeNoOp(e:Expr):Expr {
     
     return switch (e.expr) {
       case ECall(expr, params):
@@ -68,44 +51,9 @@ class Macros {
           trace("SKIP: " + err);
         }
         resExpr;
-      default:
-        ExprTools.map(e, dbg);
-    }
-  }
-  
-  
-  #if !macro macro #end
-  static function makeNoOp(expr:Expr):Expr {
-    if (expr == null) return null;
-    
-    switch (expr.expr) {
-      case ECall(expr, params):
-        //trace(ExprTools.toString(expr));
-        var typed:TypedExpr = Context.typeExpr(expr);
-        trace("typedExpr: " + typed.toString());
-        //trace("type: " + typed.t);
-        //var complexType = TTypeTools.toComplexType(type);
-        //
-        //switch complexType {
-          //case TPath(p):
-            //trace(p);
-          //case TFunction(args, ret):
-            //trace(args);
-          //default:
-        //}
         
-        //trace(TComplexTypeTools.toString(complexType));
-        //trace("call");
-        switch (expr.expr) {
-          case EConst(CIdent(id)) if (id == "log"):
-            trace("found");
-            return macro null;
-          default:
-            return expr;
-        }
-        //return ExprTools.map(e.expr, makeNoOp);
       default:
-        return ExprTools.map(expr, makeNoOp);
+        ExprTools.map(e, makeNoOp);
     }
   }
   
