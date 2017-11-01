@@ -42,10 +42,12 @@ class Macros {
             trace("  Remove this");
             var noopFunc = Context.parseInlineString(
               "Macros.NOOP()",
-              Context.currentPos());
+              Context.currentPos()
+            );
             
             trace("Parsed: " + noopFunc);
             resExpr = macro $noopFunc;
+            //resExpr = macro null;
           }
         } catch (err:Dynamic){
           trace("SKIP: " + err);
