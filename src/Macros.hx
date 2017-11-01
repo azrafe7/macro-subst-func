@@ -46,8 +46,9 @@ class Macros {
             );
             
             trace("Parsed: " + noopFunc);
-            resExpr = macro $noopFunc;
-            //resExpr = macro null;
+            //resExpr = resExpr;            // no changes
+            resExpr = macro $noopFunc;    // subst with NOOP()
+            //resExpr = macro null;         // subst with null
           }
         } catch (err:Dynamic){
           trace("SKIP: " + err);
