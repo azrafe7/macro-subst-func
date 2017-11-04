@@ -2,4 +2,4 @@
 -main Main
 -debug
 
---macro Macros.substStaticCall('Debug', 'logRemove', 'haxe.Log.trace("here")', true)
+--macro Macros.substStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, true)

@@ -17,6 +17,7 @@ class Macros {
   static var typePath:String;
   static var methodName:String;
   static var withCode:String;
+  static var forwardArgs:Bool;
   static var logSubsts:Bool;
   
   /** `dotPath` is expected to be like `Debug.logRemove`. 
@@ -25,15 +26,17 @@ class Macros {
    * logs to substs.log
    */
   #if !macro macro #end
-  static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, logSubsts:Bool = false) {
+  static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
     Macros.typePath = typePath;
     Macros.methodName = methodName;
     Macros.withCode = withCode != null && withCode != "" ? withCode : "Macros.NOOP()";
+    Macros.forwardArgs = forwardArgs == true;
     Macros.logSubsts = logSubsts == true;
     trace("substStaticCall");
     trace(" typePath: " + Macros.typePath);
     trace(" methodName: " + Macros.methodName);
     trace(" withCode: " + Macros.withCode);
+    trace(" forwardArgs: " + Macros.forwardArgs);
     trace(" logSubsts: " + Macros.logSubsts);
     Compiler.addMetadata(NO_SUBST, Macros.typePath, Macros.methodName, true);
     Compiler.addGlobalMetadata('', '@:build(Macros.build())');
@@ -73,6 +76,7 @@ class Macros {
     return switch (e.expr) {
       case ECall(expr, params):
         trace("call " + expr);
+        trace("params " + params);
         var resExpr = e;
         try {
           var typed:TypedExpr = Context.typeExpr(expr);
@@ -85,7 +89,18 @@ class Macros {
               e.pos
             );
             
+            if (forwardArgs && params != null) {
+              trace("Try to forward args: " + params.map(ExprTools.toString));
+              noopFunc.expr = switch (noopFunc.expr) {
+                case ECall(x, _):
+                  ECall(x, params);
+                case _:
+                  noopFunc.expr;
+              }
+            }
+            
             trace("Parsed: " + noopFunc);
+            trace("        " + macro $noopFunc);
             //resExpr = resExpr;            // no changes
             resExpr = macro $noopFunc;    // subst with NOOP()
             //resExpr = macro null;         // subst with null
