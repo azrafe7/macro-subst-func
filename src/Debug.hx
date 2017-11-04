@@ -7,4 +7,8 @@ class Debug {
     trace(msg);
     return msg;
   }
+  
+  static public function NOOP():Void {
+    trace("NOOP");
+  }
 }

@@ -1,6 +1,6 @@
 package mylib;
 
-import Debug.logRemove;
+import Debug;
 
 @:keep
 class MyLib {
@@ -9,7 +9,11 @@ class MyLib {
   
   public function new(i:Int):Void {
     this.i = i;
-    logRemove("new MyLib(" + i + ")");
+    Debug.logRemove("new MyLib(" + i + ")");
+  }
+  
+  static public function name():Void {
+    trace("inside MyLib");
   }
 }
 
