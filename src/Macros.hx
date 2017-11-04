@@ -29,7 +29,7 @@ class Macros {
   static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
     Macros.typePath = typePath;
     Macros.methodName = methodName;
-    Macros.withCode = withCode != null && withCode != "" ? withCode : "Macros.NOOP()";
+    Macros.withCode = withCode == null ? 'null' : withCode;
     Macros.forwardArgs = forwardArgs == true;
     Macros.logSubsts = logSubsts == true;
     trace("substStaticCall");
