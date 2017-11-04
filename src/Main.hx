@@ -4,8 +4,7 @@ import mylib.MyLib;
 import Debug.logRemove;
 
 @:keep
-@removeCall
-@:build(Macros.build())
+//@:build(Macros.build())
 class Main {
   
   static var str = "string";
@@ -17,6 +16,7 @@ class Main {
     logRemove(str + " " + i64);
     trace(str + " " + i64);
     work();
+    var ml = new MyLib(13);
   }
   
   @:keep
