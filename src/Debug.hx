@@ -1,9 +1,9 @@
 
-@:keep
+@:build(Macros.build())
 class Debug {
   
-  static public function logRemove(s:String):String {
-    var msg = "LOGREMOVE: " + s;
+  static public function log(s:String):String {
+    var msg = "LOG: " + s;
     trace(msg);
     return msg;
   }

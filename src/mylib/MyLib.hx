@@ -1,19 +1,15 @@
 package mylib;
 
-import Debug.logRemove;
+import Debug.log;
 
-@:keep
+@:build(Macros.build())
 class MyLib {
   
   var i:Int;
   
   public function new(i:Int):Void {
     this.i = i;
-    logRemove("new MyLib(" + i + ")");
-  }
-  
-  static public function name():Void {
-    trace("inside MyLib");
+    Debug.log("new MyLib(" + i + ")");
   }
 }
 
