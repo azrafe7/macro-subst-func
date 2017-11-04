@@ -11,6 +11,10 @@ class MyLib {
     this.i = i;
     logRemove("new MyLib(" + i + ")");
   }
+  
+  static public function name():Void {
+    trace("inside MyLib");
+  }
 }
 
 
