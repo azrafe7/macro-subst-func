@@ -23,6 +23,9 @@ class Macros {
   
   static var fullMethodName:String;
   
+  static var substitutions:Array<String>;
+  
+  
   static public function printInfo():Void {
     trace("substStaticCall");
     trace("  typePath: " + Macros.typePath);
@@ -45,8 +48,14 @@ class Macros {
     
     printInfo();
     
+    Macros.substitutions = [];
     Compiler.addMetadata(META_NO_SUBST, Macros.typePath, Macros.methodName, true);
     Compiler.addGlobalMetadata('', '@:build(Macros.build())');
+    
+    Context.onAfterTyping(function (_):Void {
+      var substs = Macros.substitutions.map(function(s) return "\n  " + s).join("");
+      trace('Substitutions: ${Macros.substitutions.length}' + substs);
+    });
   }
   
   static public function build() {
@@ -111,38 +120,54 @@ class Macros {
         trace(indent + " call() " + expr.toString());
         trace(indent + " params " + params);
         var resExpr = e;
+        
+        var callString = "";
+        var succesfulTyping = false;
         try {
+          // try to type expr
           trace(indent + " TRY");
-          var callString = expr.toString();
-          var shouldSubst = callString == Macros.fullMethodName;
-          trace(indent + "  SHOULD_SUBST: " + shouldSubst);
-          
-          if (shouldSubst) {
-            trace(indent + "   subst this");
-            var substFunc = Context.parse(
-              Macros.withCode,
-              e.pos
-            );
-            
-            if (forwardArgs && params != null) {
-              trace(indent + "   forward args: " + params.map(ExprTools.toString));
-              substFunc.expr = switch (substFunc.expr) {
-                case ECall(x, _):
-                  ECall(x, params);
-                case _:
-                  substFunc.expr;
-              }
-            }
-            
-            trace(indent + "  substFunc: " + substFunc);
-            trace(indent + "  substFunc(): " + substFunc.toString());
-            //resExpr = resExpr;            // no changes
-            resExpr = substFunc;    // subst
-            //resExpr = macro null;         // subst with null
-          }
+          var typedExpr:TypedExpr = Context.typeExpr(expr);
+          var methodName = TTypedExprTools.toString(typedExpr, true);
+          succesfulTyping = true;
+          callString = methodName;
+          trace(indent + "  GOT A TYPED_EXPR");
         } catch (err:Dynamic) {
           trace(indent + " CATCH: " + err);
         }
+        
+        // unsuccessful typing, use expr.toString()
+        if (!succesfulTyping) callString = expr.toString();
+        
+        var shouldSubst = (callString == Macros.fullMethodName);
+        trace(indent + "  SHOULD_SUBST: " + shouldSubst);
+          
+        if (shouldSubst) {
+          trace(indent + "   subst this");
+          var substFunc = Context.parse(
+            Macros.withCode,
+            e.pos
+          );
+          
+          if (forwardArgs && params != null) {
+            trace(indent + "   forward args: " + params.map(ExprTools.toString));
+            substFunc.expr = switch (substFunc.expr) {
+              case ECall(x, _):
+                ECall(x, params);
+              case _:
+                substFunc.expr;
+            }
+          }
+          
+          trace(indent + "  substFunc: " + substFunc);
+          trace(indent + "  substFunc(): " + substFunc.toString());
+          //resExpr = resExpr;            // no changes
+          resExpr = substFunc;    // subst
+          //resExpr = macro null;         // subst with null
+          
+          trace(indent + " SUBSTED");
+          Macros.substitutions.push('${e.toString()} => ${substFunc.toString()}');
+        }
+          
         trace(level + indent + "resExpr");
         resExpr;
         
