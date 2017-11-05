@@ -53,17 +53,7 @@ class Macros {
     
     var fields = Context.getBuildFields();
     
-    //Context.onTypeNotFound(function (typeStr:String):TypeDefinition {
-      //trace("NOT FOUND " + typeStr);
-      //return null;
-    //});
-    
     for (field in fields) {
-      //var file = TPositionTools.getInfos(field.pos).file;
-      //var ereg = ~/[\\\/]std[\\\/]/;
-      //trace(ereg.match(file) + " " + file);
-      //if (ereg.match(file)) return null;
-      
       var className = Context.getLocalClass();
       
       // don't mess with things in std
@@ -98,7 +88,6 @@ class Macros {
           trace("FIELD: " + field.name);
           trace("FEXPR(before): " + func.expr);
           
-          
           level = 0;
           func.expr = substExprCall(func.expr);
           trace("FEXPR(after): " + func.expr);
@@ -125,22 +114,10 @@ class Macros {
         try {
           trace(indent + " TRY");
           var callString = expr.toString();
-          var mustSubst = callString == Macros.fullMethodName;
-          trace(indent + "  SHOULD_SUBST: " + mustSubst);
+          var shouldSubst = callString == Macros.fullMethodName;
+          trace(indent + "  SHOULD_SUBST: " + shouldSubst);
           
-          //var type = Context.typeof(resExpr);
-          //trace("TYPE: " + type);
-          //var methodName = TTypeTools.toString(type);
-          
-          //var extractedCIdent = switch (expr) {
-            //case {expr:EConst(CIdent(name)), pos:_}: name;
-            //case _: "";
-          //};
-          //if (Macros.typePath + "." + extractedCIdent == Macros.typePath + "." + Macros.methodName) {
-            //trace("SHOULD");
-          //}
-          
-          if (mustSubst) {
+          if (shouldSubst) {
             trace(indent + "   subst this");
             var substFunc = Context.parse(
               Macros.withCode,
@@ -158,8 +135,9 @@ class Macros {
             }
             
             trace(indent + "  substFunc: " + substFunc);
+            trace(indent + "  substFunc(): " + substFunc.toString());
             //resExpr = resExpr;            // no changes
-            resExpr = substFunc;    // subst with NOOP()
+            resExpr = substFunc;    // subst
             //resExpr = macro null;         // subst with null
           }
         } catch (err:Dynamic) {
