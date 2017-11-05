@@ -100,7 +100,7 @@ class Macros {
           
           
           level = 0;
-          func.expr = makeNoOp(func.expr);
+          func.expr = substExprCall(func.expr);
           trace("FEXPR(after): " + func.expr);
         default:
       }
@@ -111,7 +111,7 @@ class Macros {
   
   static var level = 0;
   
-  static function makeNoOp(e:Expr):Expr {
+  static function substExprCall(e:Expr):Expr {
 
     var indent = [for (i in 0...level + 1) " "].join("");
     trace((level++) + indent + e);
@@ -142,24 +142,24 @@ class Macros {
           
           if (mustSubst) {
             trace(indent + "   subst this");
-            var noopFunc = Context.parse(
+            var substFunc = Context.parse(
               Macros.withCode,
               e.pos
             );
             
             if (forwardArgs && params != null) {
               trace(indent + "   forward args: " + params.map(ExprTools.toString));
-              noopFunc.expr = switch (noopFunc.expr) {
+              substFunc.expr = switch (substFunc.expr) {
                 case ECall(x, _):
                   ECall(x, params);
                 case _:
-                  noopFunc.expr;
+                  substFunc.expr;
               }
             }
             
-            trace(indent + "  noopFunc: " + noopFunc);
+            trace(indent + "  substFunc: " + substFunc);
             //resExpr = resExpr;            // no changes
-            resExpr = noopFunc;    // subst with NOOP()
+            resExpr = substFunc;    // subst with NOOP()
             //resExpr = macro null;         // subst with null
           }
         } catch (err:Dynamic) {
@@ -169,7 +169,7 @@ class Macros {
         resExpr;
         
       case _:
-        ExprTools.map(e, makeNoOp);
+        ExprTools.map(e, substExprCall);
     }
   }
   
