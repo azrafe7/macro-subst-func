@@ -21,23 +21,30 @@ class Macros {
   static var forwardArgs:Bool;
   static var logSubsts:Bool;
   
-  /** `dotPath` is expected to be like `Debug.logRemove`. 
-   * 
-   * (no parentheses, full path)
-   * logs to substs.log
-   */
-  static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
-    Macros.typePath = typePath;
-    Macros.methodName = methodName;
-    Macros.withCode = withCode == null ? 'null' : withCode;
-    Macros.forwardArgs = forwardArgs == true;
-    Macros.logSubsts = logSubsts == true;
+  static var fullMethodName:String;
+  
+  static public function printInfo():Void {
     trace("substStaticCall");
     trace("  typePath: " + Macros.typePath);
     trace("  methodName: " + Macros.methodName);
     trace("  withCode: " + Macros.withCode);
     trace("  forwardArgs: " + Macros.forwardArgs);
     trace("  logSubsts: " + Macros.logSubsts);
+    trace("");
+    trace("  fullMethodName: " + Macros.fullMethodName);
+  }
+    
+  static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
+    Macros.typePath = typePath;
+    Macros.methodName = methodName;
+    Macros.withCode = withCode == null ? 'null' : withCode;
+    Macros.forwardArgs = forwardArgs == true;
+    Macros.logSubsts = logSubsts == true;
+    
+    Macros.fullMethodName = [Macros.typePath, Macros.methodName].join(".");
+    
+    printInfo();
+    
     Compiler.addMetadata(META_NO_SUBST, Macros.typePath, Macros.methodName, true);
     Compiler.addGlobalMetadata('', '@:build(Macros.build())');
   }
@@ -60,7 +67,7 @@ class Macros {
       var className = Context.getLocalClass();
       
       // don't mess with things in std
-      trace("IN_STD  :" + isInStd(field.pos));
+      trace("IN_STD : " + isInStd(field.pos));
       if (isInStd(field.pos)) {
         trace('SKIPPING CLASS $className');
         return null;
@@ -105,39 +112,35 @@ class Macros {
   static var level = 0;
   
   static function makeNoOp(e:Expr):Expr {
-    //return e;
-    //if (e == null) {
-      //trace(" returning null");
-      //return null;
-    //}
-    //trace(Context.getLocalClass().get());
+
     var indent = [for (i in 0...level + 1) " "].join("");
     trace((level++) + indent + e);
-    //var file = TPositionTools.getInfos(e.pos).file;
-    //var ereg = ~/[\\\/]std[\\\/]/;
-    //trace(ereg.match(file) + " " + file);
-    //if (ereg.match(file)) return e;
     
     return switch (e.expr) {
       case ECall(expr, params):
         trace(indent + " call " + expr);
+        trace(indent + " call() " + expr.toString());
         trace(indent + " params " + params);
         var resExpr = e;
         try {
           trace(indent + " TRY");
-          trace(indent + "  ISCALLPATH: " + isCallTo(Macros.typePath + "." + Macros.methodName, e));
+          var callString = expr.toString();
+          var mustSubst = callString == Macros.fullMethodName;
+          trace(indent + "  SHOULD_SUBST: " + mustSubst);
+          
           //var type = Context.typeof(resExpr);
           //trace("TYPE: " + type);
           //var methodName = TTypeTools.toString(type);
           
-          var extractedCIdent = switch (expr) {
-            case {expr:EConst(CIdent(name)), pos:_}: name;
-            case _: "";
-          };
-          var methodName = Macros.typePath + "." + extractedCIdent;
+          //var extractedCIdent = switch (expr) {
+            //case {expr:EConst(CIdent(name)), pos:_}: name;
+            //case _: "";
+          //};
+          //if (Macros.typePath + "." + extractedCIdent == Macros.typePath + "." + Macros.methodName) {
+            //trace("SHOULD");
+          //}
           
-          trace(indent + "  METH: " + methodName);
-          if (methodName == Macros.typePath + "." + Macros.methodName) {
+          if (mustSubst) {
             trace(indent + "   subst this");
             var noopFunc = Context.parse(
               Macros.withCode,
@@ -167,44 +170,6 @@ class Macros {
         
       case _:
         ExprTools.map(e, makeNoOp);
-    }
-  }
-  
-  static public function isCallTo(call:String, expr:Expr):Bool {
-    var callPath = call.split(".");
-    return _isCallTo(callPath, expr);
-  }
-  
-  static function _isCallTo(callPath:Array<String>, expr:Expr, idx:Int = 0):Bool {
-    var lastIdx = callPath.length - 1;
-    if (lastIdx < 0) return false;
-    var currPart = callPath.shift();
-    
-    return switch (expr.expr) {
-      case EField(fieldExpr, name):
-        if (name == currPart) {
-          if (idx == lastIdx) true;
-          else _isCallTo(callPath, fieldExpr, idx + 1);
-        } else {
-          false;
-        }
-        
-      case ECall(callExpr, params):
-        switch (callExpr.expr) {
-          case EConst(CIdent(name)):
-            if (name == currPart) {
-              if (idx == lastIdx) true;
-              else _isCallTo(callPath, callExpr, idx + 1);
-            } else {
-              false;
-            }
-          
-          case _:
-            false;
-        }
-            
-      case _:
-        false;
     }
   }
   

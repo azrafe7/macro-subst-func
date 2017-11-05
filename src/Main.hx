@@ -15,7 +15,7 @@ class Main {
     Debug.logRemove(Std.string(i64));
     logRemove(str + " " + i64);
     trace(str + " " + i64);
-    work();
+    Main.work();
     var ml = new MyLib(13);
   }
   
