@@ -76,15 +76,6 @@ class Macros {
   static var currConfig:SubstConfig;
   
   
-  static public function global(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
-    var params = '"$typePath","$methodName",\'$withCode\',$forwardArgs,$logSubsts';
-    trace(params);
-    Compiler.addGlobalMetadata('', "@:build(subst.Macros.b(" + params + "))");
-  }
-  static public function b(tp:String, mn:String, ?wc:String, fa:Bool, ls:Bool) {
-    return null;
-  }
-  
   static public function globalSubstStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
     var config = new SubstConfig(typePath, methodName, withCode, forwardArgs, logSubsts);
     Compiler.addGlobalMetadata('', "@:build(subst.Macros.substStaticCall(" + config.asParams() + "))");
