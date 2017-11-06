@@ -32,15 +32,15 @@ class Macros {
   
   
   static public function printInfo():Void {
-    trace("substStaticCall");
-    trace("  typePath: " + Macros.typePath);
-    trace("  methodName: " + Macros.methodName);
-    trace("  withCode: " + Macros.withCode);
-    trace("  forwardArgs: " + Macros.forwardArgs);
-    trace("  logSubsts: " + Macros.logSubsts);
-    trace("");
-    trace("  fullMethodName: " + Macros.fullMethodName);
-    trace("");
+    dbg("substStaticCall");
+    dbg("  typePath: " + Macros.typePath);
+    dbg("  methodName: " + Macros.methodName);
+    dbg("  withCode: " + Macros.withCode);
+    dbg("  forwardArgs: " + Macros.forwardArgs);
+    dbg("  logSubsts: " + Macros.logSubsts);
+    dbg("");
+    dbg("  fullMethodName: " + Macros.fullMethodName);
+    dbg("");
   }
   
   static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
@@ -60,7 +60,7 @@ class Macros {
     
     Context.onAfterTyping(function (_):Void {
       var substs = Macros.substitutions.map(function(s) return "\n  " + s).join("");
-      trace('Substitutions: ${Macros.substitutions.length}' + substs);
+      dbg('Substitutions: ${Macros.substitutions.length}' + substs);
     });
   }
   
@@ -70,32 +70,32 @@ class Macros {
     
     for (field in fields) {
       var className = Context.getLocalClass();
-      trace("CLASS  : " + className);
+      dbg("CLASS  : " + className);
       
       // don't mess with things in std
-      trace("IN_STD : " + isInStd(field.pos) + ' (${field.pos})');
+      dbg("IN_STD : " + isInStd(field.pos) + ' (${field.pos})');
       if (isInStd(field.pos)) {
-        trace('SKIPPING CLASS (in std)');
+        dbg('SKIPPING CLASS (in std)');
         return null;
       }
       
       var classType:Null<ClassType> = getClassTypeOwnerOf(field);
       if (classType == null) {
-        trace('SKIPPING CLASS (type == null)');
+        dbg('SKIPPING CLASS (type == null)');
         return null;
       }
       
       if (classType != null) {
-        trace("TYPE   : " + classType);
-        trace("METAS  : " + classType.meta.get().map(function(m) return m.name));
-        trace("NOSUBST: " + classType.meta.has(NO_SUBST));
+        dbg("TYPE   : " + classType);
+        dbg("METAS  : " + classType.meta.get().map(function(m) return m.name));
+        dbg("NOSUBST: " + classType.meta.has(NO_SUBST));
         
-        //trace('ERRRO SKIPPING ');
+        //dbg('ERRRO SKIPPING ');
         //return null;
       }
       
       if (classType.meta.has(NO_SUBST)) {
-        trace('SKIPPING CLASS (marked with $META_NO_SUBST)');
+        dbg('SKIPPING CLASS (marked with $META_NO_SUBST)');
         return null;
       }
       
@@ -103,20 +103,20 @@ class Macros {
         case FFun(func):
           if (field.meta != null && field.meta.length > 0) {
             
-            trace("META: " + field.meta);
+            dbg("META: " + field.meta);
             var hasNoSubst = field.meta.filter(function(m) return StringTools.startsWith(m.name, NO_SUBST)).length > 0;
             if (hasNoSubst) {
-            trace('SKIPPING METHOD ${field.name}');
+            dbg('SKIPPING METHOD ${field.name}');
               continue;
             }
           }
           
-          trace("FIELD: " + field.name);
-          trace("FEXPR(before): " + func.expr);
+          dbg("FIELD: " + field.name);
+          dbg("FEXPR(before): " + func.expr);
           
           level = 0;
           func.expr = substExprCall(func.expr);
-          trace("FEXPR(after): " + func.expr);
+          dbg("FEXPR(after): " + func.expr);
         default:
       }
     }
@@ -130,13 +130,13 @@ class Macros {
 
     if (e == null) return null;
     var indent = [for (i in 0...level + 1) " "].join("");
-    trace((level++) + indent + e);
+    dbg((level++) + indent + e);
     
     return switch (e.expr) {
       case ECall(expr, params):
-        trace(indent + " call " + expr);
-        trace(indent + " call() " + expr.toString());
-        trace(indent + " params " + params);
+        dbg(indent + " call " + expr);
+        dbg(indent + " call() " + expr.toString());
+        dbg(indent + " params " + params);
         var resExpr = e;
         
         var callString = "";
@@ -144,31 +144,31 @@ class Macros {
         // NOTE(az): reenable this when https://github.com/HaxeFoundation/haxe/issues/6736 is fixed
         //try {
           //// try to type expr
-          //trace(indent + " TRY");
+          //dbg(indent + " TRY");
           //var typedExpr:TypedExpr = Context.typeExpr(expr);
           //var methodName = TTypedExprTools.toString(typedExpr, true);
           //succesfulTyping = true;
           //callString = methodName;
-          //trace(indent + "  GOT A TYPED_EXPR");
+          //dbg(indent + "  GOT A TYPED_EXPR");
         //} catch (err:Dynamic) {
-          //trace(indent + " CATCH: " + err);
+          //dbg(indent + " CATCH: " + err);
         //}
         
         // unsuccessful typing, use expr.toString()
         if (!succesfulTyping) callString = expr.toString();
         
         var shouldSubst = (callString == Macros.fullMethodName);
-        trace(indent + "  SHOULD_SUBST: " + shouldSubst);
+        dbg(indent + "  SHOULD_SUBST: " + shouldSubst);
           
         if (shouldSubst) {
-          trace(indent + "   subst this");
+          dbg(indent + "   subst this");
           var substFunc = Context.parse(
             Macros.withCode,
             e.pos
           );
           
           if (forwardArgs && params != null) {
-            trace(indent + "   forward args: " + params.map(ExprTools.toString));
+            dbg(indent + "   forward args: " + params.map(ExprTools.toString));
             substFunc.expr = switch (substFunc.expr) {
               case ECall(x, _):
                 ECall(x, params);
@@ -177,17 +177,17 @@ class Macros {
             }
           }
           
-          trace(indent + "  substFunc: " + substFunc);
-          trace(indent + "  substFunc(): " + substFunc.toString());
+          dbg(indent + "  substFunc: " + substFunc);
+          dbg(indent + "  substFunc(): " + substFunc.toString());
           //resExpr = resExpr;            // no changes
           resExpr = substFunc;    // subst
           //resExpr = macro null;         // subst with null
           
-          trace(indent + " SUBSTED");
+          dbg(indent + " SUBSTED");
           Macros.substitutions.push('${e.toString()} => ${substFunc.toString()}');
         }
           
-        trace(level + indent + "resExpr");
+        dbg(level + indent + "resExpr");
         resExpr;
         
       case _:
@@ -199,7 +199,7 @@ class Macros {
     try {
       return Context.getLocalClass().get();
     } catch (err:Dynamic) {
-      trace("getClassTypeOwnerOf() FAILED");
+      dbg("getClassTypeOwnerOf() FAILED");
     }
     return null;
   }
@@ -210,5 +210,14 @@ class Macros {
     return ereg.match(file);
   }
   
+#end
+
+
+#if subst_debug
+  static function dbg(v:Dynamic, ?infos:haxe.PosInfos):Void {
+    haxe.Log.trace(v, infos);
+  }
+#else
+  inline static function dbg(v:Dynamic, ?infos:haxe.PosInfos):Void { }
 #end
 }
