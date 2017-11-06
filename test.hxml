@@ -3,9 +3,9 @@
 -main Main
 -debug
 
---macro subst.Macros.globalSubstStaticCall('mylib.MyLib', 'name', 'haxe.Log.trace("puppa ")', false, true)
---macro subst.Macros.globalSubstStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, false)
---macro subst.Macros.globalSubstStaticCall('Main', 'work', 'haxe.Log.trace("puppa ")', false, true)
-#--macro subst.Macros.globalSubstStaticCall('', 'logRemove', 'haxe.Log.trace("puppa ")', true, true)
+--macro subst.Macros.globalSubstStaticCall('mylib.MyLib', 'name', 'haxe.Log.trace("puppa")', false, true)
+--macro subst.Macros.globalSubstStaticCall('Debug', 'logRemove', 'function(args) { haxe.Log.trace("FORWARDED " + args);}()', true, true)
+--macro subst.Macros.globalSubstStaticCall('Main', 'work', null, false, true)
+--macro subst.Macros.globalSubstStaticCall('', 'logRemove', 'haxe.Log.trace("REPLACED")', false, true)
 
 -D subst_debug=true
