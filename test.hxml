@@ -4,7 +4,7 @@
 -debug
 
 --macro subst.Macros.globalSubstStaticCall('mylib.MyLib', 'name', 'haxe.Log.trace("puppa ")', false, true)
---macro subst.Macros.globalSubstStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, true)
+--macro subst.Macros.globalSubstStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, false)
 --macro subst.Macros.globalSubstStaticCall('Main', 'work', 'haxe.Log.trace("puppa ")', false, true)
 
 -D subst_debug

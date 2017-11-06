@@ -85,7 +85,7 @@ class Macros {
     
     currConfig = new SubstConfig(typePath, methodName, withCode, forwardArgs, logSubsts);
     if (!configs.exists(currConfig.hash)) {
-      dbg("START" + currConfig.toString());
+      if (currConfig.logSubsts) trace("START" + currConfig.toString());
       configs[currConfig.hash] = currConfig;
       substitutions[currConfig.hash] = [];
     }
@@ -93,9 +93,10 @@ class Macros {
     if (!inited) {
       Context.onAfterTyping(function (_):Void {
         for (k in substitutions.keys()) {
+          if (!configs[k].logSubsts) continue;
           var entry = substitutions[k];
           var substsStr = entry.map(function(s) return "\n  " + s).join("");
-          dbg("END" + configs[k].toString() + '\n  substitutions: ${entry.length}' + substsStr + "\n");
+          trace("END" + configs[k].toString() + '\n  substitutions: ${entry.length}' + substsStr + "\n");
         }
       });
     }
