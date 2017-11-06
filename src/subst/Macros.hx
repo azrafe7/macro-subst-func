@@ -254,7 +254,7 @@ class Macros {
 #end
 
 
-#if subst_debug
+#if (subst_debug && subst_debug!="false")
   static function dbg(v:Dynamic, ?infos:haxe.PosInfos):Void {
     haxe.Log.trace(v, infos);
   }
