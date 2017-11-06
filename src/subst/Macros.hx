@@ -4,6 +4,7 @@ package subst;
 /** Implementation only available in macro. */
 class Macros {
 #else
+import haxe.ds.Map;
 import haxe.macro.Type.ClassType;
 import haxe.macro.Compiler;
 import haxe.macro.Expr;
@@ -14,57 +15,105 @@ import haxe.macro.ExprTools;
 using haxe.macro.Tools;
 
 
+typedef ConfigHash = String;
+
+
+class SubstConfig {
+  
+  public var typePath:String;
+  public var methodName:String;
+  public var withCode:String;
+  public var forwardArgs:Bool;
+  public var logSubsts:Bool;
+  
+  public var fullMethodName:String;
+  
+  public var hash:ConfigHash;
+  public var params:String = null;
+  
+  public function new(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false):Void {
+    this.typePath = typePath;
+    this.methodName = methodName;
+    this.withCode = withCode == null ? 'null' : withCode;
+    this.forwardArgs = forwardArgs == true;
+    this.logSubsts = logSubsts == true;
+    
+    this.fullMethodName = [this.typePath, this.methodName].join(".");
+    this.hash = StringTools.replace(this.asParams(), " ", "");
+  }
+  
+  public function asParams():String {
+    if (this.params == null) {
+      this.params = '"$typePath","$methodName",\'$withCode\',$forwardArgs,$logSubsts';
+    }
+    return this.params;
+  }
+  
+  public function toString():String {
+    return ["",
+      "substStaticCall",
+      "  typePath: " + typePath,
+      "  methodName: " + methodName,
+      "  withCode: " + withCode,
+      "  forwardArgs: " + forwardArgs,
+      "  logSubsts: " + logSubsts,
+      "",
+      "  fullMethodName: " + fullMethodName,
+      ""].join("\n");
+  }
+}
+
 @:keep
 class Macros {
   
   inline static var NO_SUBST = "noSubst";
   inline static var META_NO_SUBST = "@" + NO_SUBST;
   
-  static var typePath:String;
-  static var methodName:String;
-  static var withCode:String;
-  static var forwardArgs:Bool;
-  static var logSubsts:Bool;
+  static var configs:Map<ConfigHash, SubstConfig> = new Map();
+  static var substitutions:Map<ConfigHash, Array<String>> = new Map();
+  static var inited = false;
   
-  static var fullMethodName:String;
-  
-  static var substitutions:Array<String>;
+  static var currConfig:SubstConfig;
   
   
-  static public function printInfo():Void {
-    dbg("substStaticCall");
-    dbg("  typePath: " + Macros.typePath);
-    dbg("  methodName: " + Macros.methodName);
-    dbg("  withCode: " + Macros.withCode);
-    dbg("  forwardArgs: " + Macros.forwardArgs);
-    dbg("  logSubsts: " + Macros.logSubsts);
-    dbg("");
-    dbg("  fullMethodName: " + Macros.fullMethodName);
-    dbg("");
+  static public function global(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
+    var params = '"$typePath","$methodName",\'$withCode\',$forwardArgs,$logSubsts';
+    trace(params);
+    Compiler.addGlobalMetadata('', "@:build(subst.Macros.b(" + params + "))");
+  }
+  static public function b(tp:String, mn:String, ?wc:String, fa:Bool, ls:Bool) {
+    return null;
+  }
+  
+  static public function globalSubstStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
+    var config = new SubstConfig(typePath, methodName, withCode, forwardArgs, logSubsts);
+    Compiler.addGlobalMetadata('', "@:build(subst.Macros.substStaticCall(" + config.asParams() + "))");
   }
   
   static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
-    Macros.typePath = typePath;
-    Macros.methodName = methodName;
-    Macros.withCode = withCode == null ? 'null' : withCode;
-    Macros.forwardArgs = forwardArgs == true;
-    Macros.logSubsts = logSubsts == true;
     
-    Macros.fullMethodName = [Macros.typePath, Macros.methodName].join(".");
+    currConfig = new SubstConfig(typePath, methodName, withCode, forwardArgs, logSubsts);
+    if (!configs.exists(currConfig.hash)) {
+      dbg("START" + currConfig.toString());
+      configs[currConfig.hash] = currConfig;
+      substitutions[currConfig.hash] = [];
+    }
     
-    printInfo();
+    if (!inited) {
+      Context.onAfterTyping(function (_):Void {
+        for (k in substitutions.keys()) {
+          var entry = substitutions[k];
+          var substsStr = entry.map(function(s) return "\n  " + s).join("");
+          dbg("END" + configs[k].toString() + '\n  substitutions: ${entry.length}' + substsStr + "\n");
+        }
+      });
+    }
+    inited = true;
     
-    Macros.substitutions = [];
-    Compiler.addMetadata(META_NO_SUBST, Macros.typePath, Macros.methodName, true);
-    Compiler.addGlobalMetadata('', '@:build(subst.Macros.build())');
-    
-    Context.onAfterTyping(function (_):Void {
-      var substs = Macros.substitutions.map(function(s) return "\n  " + s).join("");
-      dbg('Substitutions: ${Macros.substitutions.length}' + substs);
-    });
+    return build();
   }
   
-  static public function build() {
+  static function build() {
     
     var fields = Context.getBuildFields();
     
@@ -157,17 +206,17 @@ class Macros {
         // unsuccessful typing, use expr.toString()
         if (!succesfulTyping) callString = expr.toString();
         
-        var shouldSubst = (callString == Macros.fullMethodName);
+        var shouldSubst = (callString == currConfig.fullMethodName);
         dbg(indent + "  SHOULD_SUBST: " + shouldSubst);
           
         if (shouldSubst) {
           dbg(indent + "   subst this");
           var substFunc = Context.parse(
-            Macros.withCode,
+            currConfig.withCode,
             e.pos
           );
           
-          if (forwardArgs && params != null) {
+          if (currConfig.forwardArgs && params != null) {
             dbg(indent + "   forward args: " + params.map(ExprTools.toString));
             substFunc.expr = switch (substFunc.expr) {
               case ECall(x, _):
@@ -184,7 +233,7 @@ class Macros {
           //resExpr = macro null;         // subst with null
           
           dbg(indent + " SUBSTED");
-          Macros.substitutions.push('${e.toString()} => ${substFunc.toString()}');
+          substitutions[currConfig.hash].push(e.pos + ': ${e.toString()} => ${substFunc.toString()}');
         }
           
         dbg(level + indent + "resExpr");
