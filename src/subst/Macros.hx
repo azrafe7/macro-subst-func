@@ -38,7 +38,7 @@ class SubstConfig {
     this.forwardArgs = forwardArgs == true;
     this.logSubsts = logSubsts == true;
     
-    this.fullMethodName = [this.typePath, this.methodName].join(".");
+    this.fullMethodName = this.typePath != '' ? [this.typePath, this.methodName].join(".") : this.methodName;
     this.hash = StringTools.replace(this.asParams(), " ", "");
   }
   
