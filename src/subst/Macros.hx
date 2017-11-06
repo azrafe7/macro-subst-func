@@ -1,4 +1,9 @@
-#if macro
+package subst;
+
+#if !macro
+/** Implementation only available in macro. */
+class Macros {
+#else
 import haxe.macro.Type.ClassType;
 import haxe.macro.Compiler;
 import haxe.macro.Expr;
@@ -35,8 +40,9 @@ class Macros {
     trace("  logSubsts: " + Macros.logSubsts);
     trace("");
     trace("  fullMethodName: " + Macros.fullMethodName);
+    trace("");
   }
-    
+  
   static public function substStaticCall(typePath:String, methodName:String, ?withCode:String, forwardArgs:Bool = false, logSubsts:Bool = false) {
     Macros.typePath = typePath;
     Macros.methodName = methodName;
@@ -50,7 +56,7 @@ class Macros {
     
     Macros.substitutions = [];
     Compiler.addMetadata(META_NO_SUBST, Macros.typePath, Macros.methodName, true);
-    Compiler.addGlobalMetadata('', '@:build(Macros.build())');
+    Compiler.addGlobalMetadata('', '@:build(subst.Macros.build())');
     
     Context.onAfterTyping(function (_):Void {
       var substs = Macros.substitutions.map(function(s) return "\n  " + s).join("");
@@ -64,21 +70,32 @@ class Macros {
     
     for (field in fields) {
       var className = Context.getLocalClass();
+      trace("CLASS  : " + className);
       
       // don't mess with things in std
-      trace("IN_STD : " + isInStd(field.pos));
+      trace("IN_STD : " + isInStd(field.pos) + ' (${field.pos})');
       if (isInStd(field.pos)) {
-        trace('SKIPPING CLASS $className');
+        trace('SKIPPING CLASS (in std)');
         return null;
       }
       
-      var classType:ClassType = getClassTypeOwnerOf(field);
-      trace("TYPE   : " + classType);
-      trace("METAS  : " + classType.meta.get().map(function(m) return m.name));
-      trace("NOSUBST: " + classType.meta.has(NO_SUBST));
+      var classType:Null<ClassType> = getClassTypeOwnerOf(field);
+      if (classType == null) {
+        trace('SKIPPING CLASS (type == null)');
+        return null;
+      }
+      
+      if (classType != null) {
+        trace("TYPE   : " + classType);
+        trace("METAS  : " + classType.meta.get().map(function(m) return m.name));
+        trace("NOSUBST: " + classType.meta.has(NO_SUBST));
+        
+        //trace('ERRRO SKIPPING ');
+        //return null;
+      }
       
       if (classType.meta.has(NO_SUBST)) {
-        trace('SKIPPING CLASS $className');
+        trace('SKIPPING CLASS (marked with $META_NO_SUBST)');
         return null;
       }
       
@@ -111,6 +128,7 @@ class Macros {
   
   static function substExprCall(e:Expr):Expr {
 
+    if (e == null) return null;
     var indent = [for (i in 0...level + 1) " "].join("");
     trace((level++) + indent + e);
     
@@ -123,17 +141,18 @@ class Macros {
         
         var callString = "";
         var succesfulTyping = false;
-        try {
-          // try to type expr
-          trace(indent + " TRY");
-          var typedExpr:TypedExpr = Context.typeExpr(expr);
-          var methodName = TTypedExprTools.toString(typedExpr, true);
-          succesfulTyping = true;
-          callString = methodName;
-          trace(indent + "  GOT A TYPED_EXPR");
-        } catch (err:Dynamic) {
-          trace(indent + " CATCH: " + err);
-        }
+        // NOTE(az): reenable this when https://github.com/HaxeFoundation/haxe/issues/6736 is fixed
+        //try {
+          //// try to type expr
+          //trace(indent + " TRY");
+          //var typedExpr:TypedExpr = Context.typeExpr(expr);
+          //var methodName = TTypedExprTools.toString(typedExpr, true);
+          //succesfulTyping = true;
+          //callString = methodName;
+          //trace(indent + "  GOT A TYPED_EXPR");
+        //} catch (err:Dynamic) {
+          //trace(indent + " CATCH: " + err);
+        //}
         
         // unsuccessful typing, use expr.toString()
         if (!succesfulTyping) callString = expr.toString();
@@ -176,8 +195,13 @@ class Macros {
     }
   }
   
-  static public function getClassTypeOwnerOf(f:Field):ClassType {
-    return Context.getLocalClass().get();
+  static public function getClassTypeOwnerOf(f:Field):Null<ClassType> {
+    try {
+      return Context.getLocalClass().get();
+    } catch (err:Dynamic) {
+      trace("getClassTypeOwnerOf() FAILED");
+    }
+    return null;
   }
   
   static public function isInStd(pos:Position):Bool {
@@ -185,5 +209,6 @@ class Macros {
     var ereg = ~/[\\\/]std[\\\/]/;
     return ereg.match(file);
   }
-}
+  
 #end
+}

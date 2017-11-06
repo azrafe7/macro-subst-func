@@ -1,7 +1,8 @@
 -cp src
+-cp tests
 -main Main
 -debug
 
-#--macro Macros.substStaticCall('mylib.MyLib', 'name', 'haxe.Log.trace("puppa ")', false, true)
-#--macro Macros.substStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, true)
---macro Macros.substStaticCall('Main', 'work', 'haxe.Log.trace("puppa ")', false, true)
+#--macro subst.Macros.substStaticCall('mylib.MyLib', 'name', 'haxe.Log.trace("puppa ")', false, true)
+#--macro subst.Macros.substStaticCall('Debug', 'logRemove', 'haxe.Log.trace("puppa ")', true, true)
+--macro subst.Macros.substStaticCall('Main', 'work', 'haxe.Log.trace("puppa ")', false, true)

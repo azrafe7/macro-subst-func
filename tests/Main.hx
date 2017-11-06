@@ -1,10 +1,10 @@
-import Macros;
+import subst.Macros;
 import haxe.Int64;
 import mylib.MyLib;
 import Debug.logRemove;
 
 @:keep
-//@:build(Macros.build())
+//@:build(subst.Macros.build())
 class Main {
   
   static var str = "string";
