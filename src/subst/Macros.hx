@@ -130,9 +130,6 @@ class Macros {
         dbg("TYPE   : " + classType);
         dbg("METAS  : " + classType.meta.get().map(function(m) return m.name));
         dbg("NOSUBST: " + classType.meta.has(NO_SUBST));
-        
-        //dbg('ERRRO SKIPPING ');
-        //return null;
       }
       
       if (classType.meta.has(NO_SUBST)) {
@@ -183,17 +180,17 @@ class Macros {
         var callString = "";
         var succesfulTyping = false;
         // NOTE(az): reenable this when https://github.com/HaxeFoundation/haxe/issues/6736 is fixed
-        //try {
-          //// try to type expr
-          //dbg(indent + " TRY");
-          //var typedExpr:TypedExpr = Context.typeExpr(expr);
-          //var methodName = TTypedExprTools.toString(typedExpr, true);
-          //succesfulTyping = true;
-          //callString = methodName;
-          //dbg(indent + "  GOT A TYPED_EXPR");
-        //} catch (err:Dynamic) {
-          //dbg(indent + " CATCH: " + err);
-        //}
+        /*ry {
+          // try to type expr
+          dbg(indent + " TRY");
+          var typedExpr:TypedExpr = Context.typeExpr(expr);
+          var methodName = TTypedExprTools.toString(typedExpr, true);
+          succesfulTyping = true;
+          callString = methodName;
+          dbg(indent + "  GOT A TYPED_EXPR");
+        } catch (err:Dynamic) {
+          dbg(indent + " CATCH: " + err);
+        }*/
         
         // unsuccessful typing, use expr.toString()
         if (!succesfulTyping) callString = expr.toString();
@@ -220,9 +217,8 @@ class Macros {
           
           dbg(indent + "  substFunc: " + substFunc);
           dbg(indent + "  substFunc(): " + substFunc.toString());
-          //resExpr = resExpr;            // no changes
+
           resExpr = substFunc;    // subst
-          //resExpr = macro null;         // subst with null
           
           dbg(indent + " SUBSTED");
           substitutions[currConfig.hash].push(e.pos + ': ${e.toString()} => ${substFunc.toString()}');
